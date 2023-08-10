@@ -1,4 +1,5 @@
 import re
+import numpy as np
 
 def parse_leaf_value(leaf_text):
     return float(re.search(r'leaf=(-?\d+\.\d+)', leaf_text).group(1))
@@ -38,12 +39,28 @@ class_conditions = {
 }
 
 boosters = txt_model.strip().split('booster[')[1:]
+
+feature_gains = {}  # Store feature gains
+for booster in boosters:
+    booster_lines = booster.strip().split('\n')
+    if len(booster_lines) >= 3:
+        conditions = extract_conditions_from_text_model('\n'.join(booster_lines[2:]))
+        for node_id, condition in conditions:
+            if isinstance(condition, str):
+                _, gain = re.search(r'gain=([0-9.]+)', condition).groups()
+                gain = float(gain)
+                feature_gains[node_id] = gain
+
+average_gain = np.mean(list(feature_gains.values()))
+important_feature_ids = [node_id for node_id, gain in feature_gains.items() if gain > average_gain]
+
 for booster in boosters:
     booster_lines = booster.strip().split('\n')
     if len(booster_lines) >= 3:
         class_id = 0 if 'leaf=0' in booster_lines[2] else 1
         conditions = extract_conditions_from_text_model('\n'.join(booster_lines[2:]))
-        class_conditions[class_id].extend(conditions)
+        filtered_conditions = [(node_id, condition) for node_id, condition in conditions if node_id in important_feature_ids]
+        class_conditions[class_id].extend(filtered_conditions)
 
 class_texts = {}
 for class_id, conditions in class_conditions.items():
