@@ -1,0 +1,35 @@
+def construct_class_text(node_id, class_id):
+    node_row = df[df['Node'] == node_id].iloc[0]
+    
+    if node_row['Category'] == 'Leaf':
+        return f"class {class_id}: {node_row['Cover']} instances"
+    
+    feature = node_row['Feature']
+    split_value = node_row['Split']
+    child_id = node_row['Yes'] if class_id == 1 else node_row['No']
+    
+    child_row = df[df['Node'] == child_id].iloc[0]
+    
+    if class_id == 1:
+        condition = f"{feature} > {split_value:.2f}"
+    else:
+        condition = f"{feature} <= {split_value:.2f}"
+    
+    return condition + "\n" + construct_class_text(child_id, class_id)
+
+class_texts = {}
+for class_id in [0, 1]:
+    leaf_nodes = df[df['Category'] == 'Leaf']
+    class_text = []
+    
+    for node_id in leaf_nodes['Node']:
+        if df[df['Node'] == node_id].iloc[0]['Yes'] == -1:
+            class_text.append(construct_class_text(node_id, class_id))
+    
+    class_texts[class_id] = "\nand ".join(class_text)
+
+print("Class 0:")
+print(class_texts[0])
+
+print("\nClass 1:")
+print(class_texts[1])
