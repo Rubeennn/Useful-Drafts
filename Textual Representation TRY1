@@ -1,25 +1,38 @@
 def construct_class_text(node_id, class_id):
     node_row = df[df['Node'] == node_id].iloc[0]
     
-    if 'Yes' not in node_row or pd.isnull(node_row['Yes']):  # This is a leaf node
+    if f"{node_id}-{class_id}" not in node_row['Yes'] and f"{node_id}-{class_id}" not in node_row['No']:
         return f"class {class_id}: {node_row['Cover']} instances"
     
     feature = node_row['Feature']
     split_value = node_row['Split']
-    child_id = node_row['Yes'] if class_id == 1 else node_row['No']
     
-    child_row = df[df['Node'] == child_id].iloc[0]
+    yes_node_id, no_node_id = None, None
+    for child_id in node_row['Yes'].split():
+        if child_id.endswith(f"-{class_id}"):
+            yes_node_id = int(child_id[:-len(f"-{class_id}")])
+            break
+    for child_id in node_row['No'].split():
+        if child_id.endswith(f"-{class_id}"):
+            no_node_id = int(child_id[:-len(f"-{class_id}")])
+            break
+    
+    if yes_node_id is None or no_node_id is None:
+        return f"class {class_id}: {node_row['Cover']} instances"
+    
+    yes_child_row = df[df['Node'] == yes_node_id].iloc[0]
+    no_child_row = df[df['Node'] == no_node_id].iloc[0]
     
     if class_id == 1:
         condition = f"{feature} > {split_value:.2f}"
     else:
         condition = f"{feature} <= {split_value:.2f}"
     
-    return condition + "\n" + construct_class_text(child_id, class_id)
+    return condition + "\n" + construct_class_text(yes_node_id, class_id) + "\nand " + construct_class_text(no_node_id, class_id)
 
 class_texts = {}
 for class_id in [0, 1]:
-    root_nodes = df[df['Parent'] == -1]
+    root_nodes = df[df['Node'] == df['tree']]
     class_text = []
     
     for root_id in root_nodes['Node']:
