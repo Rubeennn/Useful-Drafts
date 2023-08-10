@@ -1,44 +1,52 @@
-def construct_class_text(node_id, class_id):
-    node_row = df[df['Node'] == node_id].iloc[0]
-    
-    if f"{node_id}-{class_id}" not in node_row['Yes'] and f"{node_id}-{class_id}" not in node_row['No']:
-        return f"class {class_id}: {node_row['Cover']} instances"
-    
-    feature = node_row['Feature']
-    split_value = node_row['Split']
-    
-    yes_node_id, no_node_id = None, None
-    for child_id in node_row['Yes'].split():
-        if child_id.endswith(f"-{class_id}"):
-            yes_node_id = int(child_id[:-len(f"-{class_id}")])
-            break
-    for child_id in node_row['No'].split():
-        if child_id.endswith(f"-{class_id}"):
-            no_node_id = int(child_id[:-len(f"-{class_id}")])
-            break
-    
-    if yes_node_id is None or no_node_id is None:
-        return f"class {class_id}: {node_row['Cover']} instances"
-    
-    yes_child_row = df[df['Node'] == yes_node_id].iloc[0]
-    no_child_row = df[df['Node'] == no_node_id].iloc[0]
-    
-    if class_id == 1:
-        condition = f"{feature} > {split_value:.2f}"
-    else:
-        condition = f"{feature} <= {split_value:.2f}"
-    
-    return condition + "\n" + construct_class_text(yes_node_id, class_id) + "\nand " + construct_class_text(no_node_id, class_id)
+import re
+
+def parse_leaf_value(leaf_text):
+    return float(re.search(r'leaf=(-?\d+\.\d+)', leaf_text).group(1))
+
+def parse_condition(condition_text):
+    match = re.search(r'\[(.*)\]', condition_text)
+    return match.group(1)
+
+def extract_conditions_from_text_model(txt_model):
+    conditions = []
+    lines = txt_model.strip().split('\n')
+    for line in lines:
+        if ':' in line:
+            node_id, rest = line.split(':', 1)
+            leaf_text = re.search(r'leaf=', rest)
+            if leaf_text:
+                conditions.append((int(node_id), parse_leaf_value(rest)))
+            else:
+                conditions.append((int(node_id), parse_condition(rest)))
+    return conditions
+
+def construct_class_text(conditions, class_id):
+    class_text = []
+    for node_id, condition in conditions:
+        if isinstance(condition, float):
+            class_text.append(f"class {class_id}: Leaf Value = {condition:.4f}")
+        else:
+            class_text.append(condition)
+    return "\n".join(class_text)
+
+with open('xgb_model.txt', 'r') as f:
+    txt_model = f.read()
+
+class_conditions = {
+    0: [],
+    1: []
+}
+
+boosters = txt_model.strip().split('booster[')[1:]
+for booster in boosters:
+    booster_lines = booster.strip().split('\n')
+    class_id = 0 if 'leaf=0' in booster_lines[2] else 1
+    conditions = extract_conditions_from_text_model('\n'.join(booster_lines[2:]))
+    class_conditions[class_id].extend(conditions)
 
 class_texts = {}
-for class_id in [0, 1]:
-    root_nodes = df[df['Node'] == df['tree']]
-    class_text = []
-    
-    for root_id in root_nodes['Node']:
-        class_text.append(construct_class_text(root_id, class_id))
-    
-    class_texts[class_id] = "\nand ".join(class_text)
+for class_id, conditions in class_conditions.items():
+    class_texts[class_id] = construct_class_text(conditions, class_id)
 
 print("Class 0:")
 print(class_texts[0])
