@@ -40,9 +40,10 @@ class_conditions = {
 boosters = txt_model.strip().split('booster[')[1:]
 for booster in boosters:
     booster_lines = booster.strip().split('\n')
-    class_id = 0 if 'leaf=0' in booster_lines[2] else 1
-    conditions = extract_conditions_from_text_model('\n'.join(booster_lines[2:]))
-    class_conditions[class_id].extend(conditions)
+    if len(booster_lines) >= 3:
+        class_id = 0 if 'leaf=0' in booster_lines[2] else 1
+        conditions = extract_conditions_from_text_model('\n'.join(booster_lines[2:]))
+        class_conditions[class_id].extend(conditions)
 
 class_texts = {}
 for class_id, conditions in class_conditions.items():
