@@ -47,9 +47,10 @@ for booster in boosters:
         conditions = extract_conditions_from_text_model('\n'.join(booster_lines[2:]))
         for node_id, condition in conditions:
             if isinstance(condition, str):
-                _, gain = re.search(r'gain=([0-9.]+)', condition).groups()
-                gain = float(gain)
-                feature_gains[node_id] = gain
+                gain_match = re.search(r'gain=([0-9.]+)', condition)
+                if gain_match:
+                    gain = float(gain_match.group(1))
+                    feature_gains[node_id] = gain
 
 average_gain = np.mean(list(feature_gains.values()))
 important_feature_ids = [node_id for node_id, gain in feature_gains.items() if gain > average_gain]
