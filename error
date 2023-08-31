@@ -1,0 +1,27 @@
+---------------------------------------------------------------------------
+ValueError                                Traceback (most recent call last)
+<ipython-input-16-130836c89d76> in <module>
+----> 1 explain = explainer.explain_instance(xx.iloc[0], model.predict_proba(xx) )
+
+/opt/conda/lib/python3.8/site-packages/xgboost/sklearn.py in predict_proba(self, X, ntree_limit, validate_features, base_margin, iteration_range)
+   1510                 "Switch to `multi:softproba` instead"
+   1511             )
+-> 1512         class_probs = super().predict(
+   1513             X=X,
+   1514             ntree_limit=ntree_limit,
+
+/opt/conda/lib/python3.8/site-packages/xgboost/sklearn.py in predict(self, X, output_margin, ntree_limit, validate_features, base_margin, iteration_range)
+   1047         if self._can_use_inplace_predict():
+   1048             try:
+-> 1049                 predts = self.get_booster().inplace_predict(
+   1050                     data=X,
+   1051                     iteration_range=iteration_range,
+
+/opt/conda/lib/python3.8/site-packages/xgboost/core.py in inplace_predict(self, data, iteration_range, predict_type, missing, validate_features, base_margin, strict_shape)
+   2126                 )
+   2127             if len(data.shape) != 1 and self.num_features() != data.shape[1]:
+-> 2128                 raise ValueError(
+   2129                     f"Feature shape mismatch, expected: {self.num_features()}, "
+   2130                     f"got {data.shape[1]}"
+
+ValueError: Feature shape mismatch, expected: 75, got 48
