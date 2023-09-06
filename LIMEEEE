@@ -1,0 +1,18 @@
+import optuna
+def objective(trail):
+    kernel_width = trail.suggest_float(name='kernel_width', low=0.02, high=10.)
+    
+    explainer = LimeTabularExplainerOvr(np.array(xx),
+                                        feature_names=xx.columns,
+                                        class_names=['A001', 'OTHER'],
+                                        verbose=False,
+                                        kernel_width=kernel_width,  # optimal kernel width
+                                        mode='classification')
+    
+    params = {
+        "data_row": xx.iloc[23],
+        "predict_fn": model.predict_proba,
+        "num_features": 75,
+        "distance_metric": "euclidean"}
+    csi, vsi = explainer.check_stability(n_calls=10, **params, index_verbose=False)
+    return vsi
