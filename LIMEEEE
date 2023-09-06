@@ -16,3 +16,19 @@ def objective(trail):
         "distance_metric": "euclidean"}
     csi, vsi = explainer.check_stability(n_calls=10, **params, index_verbose=False)
     return vsi
+
+
+study = optuna.create_study(direction='maximize')
+study.optimize(objective, n_trials=20)
+
+best_kernel = study.best_params['kernel_width']
+
+
+explainer = LimeTabularExplainerOvr(training_data=np.array(xx),
+                                    feature_names=xx.columns,
+                                    class_names=['Yes', 'OTHER'],
+                                    verbose=False,
+                                    kernel_width=best_kernel,
+                                      # optimal kernel width
+                                    mode='classification')
+
