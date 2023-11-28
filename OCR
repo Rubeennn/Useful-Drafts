@@ -1,0 +1,37 @@
+import cv2
+
+def preprocess_image(image_path):
+    # Read the image
+    image = cv2.imread(image_path)
+
+    # Convert to Grayscale
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Contrast Enhancement (Histogram Equalization)
+    enhanced_image = cv2.equalizeHist(gray_image)
+
+    # Denoising
+    denoised_image = cv2.fastNlMeansDenoising(enhanced_image, None, h=10, templateWindowSize=7, searchWindowSize=21)
+
+    # Sharpening (Optional)
+    kernel =  np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]]) # Example kernel for sharpening
+    sharpened_image = cv2.filter2D(denoised_image, -1, kernel)
+
+    # Rescaling (Optional, adjust to your desired size)
+    new_width, new_height = 800, 600
+    rescaled_image = cv2.resize(sharpened_image, (new_width, new_height))
+
+    # Adaptive Thresholding
+    _, thresholded_image = cv2.threshold(rescaled_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # Erosion (Optional)
+    kernel_erode = np.ones((3, 3), np.uint8)
+    eroded_image = cv2.erode(thresholded_image, kernel_erode, iterations=1)
+
+    return eroded_image
+
+# Replace 'your_image_path.jpg' with the path to your image
+preprocessed_image = preprocess_image('your_image_path.jpg')
+
+# Now you can use preprocessed_image for text detection with Tesseract
+# e.g., pytesseract.image_to_data(preprocessed_image, output_type=pytesseract.Output.DICT)
