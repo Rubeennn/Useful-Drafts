@@ -39,3 +39,41 @@ preprocessed_image = preprocess_image('your_image_path.jpg')
 
 
 results = pytesseract.image_to_data(image,lang='eng+hye',  output_type = Output.DATAFRAME, config='--psm 6')
+
+import pytesseract
+from pytesseract import Output
+import pandas as pd
+
+# Assuming 'image' is your input image
+
+# Use Tesseract to extract text data into a DataFrame
+results = pytesseract.image_to_data(image, lang='eng+hye', output_type=Output.DATAFRAME, config='--psm 6')
+
+# Initialize a dictionary to store cell contents
+table_data = {}
+
+# Iterate through the rows of the Tesseract output
+for index, row in results.iterrows():
+    left, top, width, height, text = row['left'], row['top'], row['width'], row['height'], row['text']
+
+    # Identify the cell based on left and top coordinates
+    cell_key = (top, left)
+
+    # Add text to the cell in the dictionary
+    table_data.setdefault(cell_key, []).append(text)
+
+# Reconstruct the table structure
+rows = []
+for cell_key, cell_content in table_data.items():
+    row, col = cell_key
+    rows.append([row, col, ' '.join(cell_content)])
+
+# Convert the list of rows to a DataFrame
+reconstructed_df = pd.DataFrame(rows, columns=['Top', 'Left', 'Text'])
+
+# Pivot the DataFrame to get the final tabular structure
+table = reconstructed_df.pivot(index='Top', columns='Left', values='Text')
+
+# Display the reconstructed table
+print(table)
+
