@@ -35,3 +35,7 @@ preprocessed_image = preprocess_image('your_image_path.jpg')
 
 # Now you can use preprocessed_image for text detection with Tesseract
 # e.g., pytesseract.image_to_data(preprocessed_image, output_type=pytesseract.Output.DICT)
+
+
+
+results = pytesseract.image_to_data(image,lang='eng+hye',  output_type = Output.DATAFRAME, config='--psm 6')
