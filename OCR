@@ -77,3 +77,25 @@ table = reconstructed_df.pivot(index='Top', columns='Left', values='Text')
 # Display the reconstructed table
 print(table)
 
+import pandas as pd
+
+# Sample DataFrame with potentially duplicate and close coordinates
+data = {'top': [0, 0, 1, 1, 0, 3],
+        'left': [0, 1, 0, 1, 0, 5],
+        'text': ['apple', 'banana', 'orange', 'grape', 'kiwi', 'melon']}
+df = pd.DataFrame(data)
+
+# Set the threshold for grouping coordinates
+threshold = 2
+
+# Group close coordinates and aggregate the 'text' values
+df['group'] = df.groupby(['top', 'left']).apply(lambda x: (x['top'].diff().abs() > threshold) | (x['left'].diff().abs() > threshold)).cumsum().values
+df_aggregated = df.groupby(['group', 'top', 'left'])['text'].agg(lambda x: ', '.join(x)).reset_index(drop=True)
+
+# Create a new DataFrame using pivot
+new_df = df_aggregated.pivot_table(index='left', columns='top', values='text', aggfunc=lambda x: ', '.join(x)).fillna('')
+
+# Print the resulting DataFrame
+print(new_df)
+
+
